@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full w-full select-none bg-slate-950 text-slate-100 font-sans overflow-hidden">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TuProfe20 - Ruleta Ganadora (Aula 2)</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- GSAP for Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <!-- Google Fonts: Orbitron, Outfit, and Fira Code for Cyberpunk aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Orbitron:wght@500;700;900&family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #020617;
+        }
+
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .font-mono-code { font-family: 'Fira Code', monospace; }
+
+        /* Cyberpunk Grid Background - HECHO MÁS VIVO Y ALEGRE PARA PRIMARIA */
+        .cyber-grid {
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.25) 0%, rgba(255, 0, 128, 0.2) 40%, transparent 75%),
+                linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        /* Glassmorphism Panel */
+        .cyber-glass {
+            background: rgba(10, 15, 30, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            box-shadow: 0 0 35px rgba(0, 0, 0, 0.85), inset 0 0 20px rgba(0, 240, 255, 0.08);
+        }
+
+        /* Neon Glow Text Effects */
+        .glow-cyan { text-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff, 0 0 40px #00f0ff; }
+        .glow-gold { text-shadow: 0 0 10px #ffd700, 0 0 25px #ffd700; }
+        .glow-pink { text-shadow: 0 0 10px #ff003c, 0 0 20px #ff003c; }
+
+        /* Screen Shake Animation during climax spin */
+        .screen-shake {
+            animation: shake 0.07s infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(2px, 2px) rotate(0deg); }
+            20% { transform: translate(-3px, -2px) rotate(-0.8deg); }
+            40% { transform: translate(-2px, 3px) rotate(0.8deg); }
+            60% { transform: translate(3px, 1px) rotate(0deg); }
+            80% { transform: translate(1px, -2px) rotate(0.8deg); }
+            100% { transform: translate(-2px, -1px) rotate(-0.8deg); }
+        }
+
+        /* Pointer spring bounce */
+        .pointer-spring {
+            transform-origin: 50% 0%;
+        }
+
+        /* Custom Scrollbar for Student List */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.8); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.5); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 255, 170, 0.9); }
+    </style>
+</head>
+<body id="appBody" class="min-h-screen w-full cyber-grid text-slate-100 flex flex-col justify-between relative bg-indigo-950">
+
+    <!-- Background Math Particle Canvas -->
+    <canvas id="bgCanvas" class="fixed inset-0 w-full h-full pointer-events-none z-0 opacity-80"></canvas>
+    
+    <!-- Laser Sparks Canvas for Wheel Pointer Collision -->
+    <canvas id="sparksCanvas" class="fixed inset-0 w-full h-full pointer-events-none z-30"></canvas>
+
+    <!-- Celebration Victory Particle Canvas -->
+    <canvas id="celebrationCanvas" class="fixed inset-0 w-full h-full pointer-events-none z-40"></canvas>
+
+    <!-- Header Navigation & Status Bar -->
+    <header class="relative z-10 w-full max-w-7xl mx-auto p-4 md:p-6 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3 bg-slate-900/90 border border-cyan-400/40 px-4 py-2.5 rounded-2xl backdrop-blur-md shadow-[0_0_25px_rgba(0,240,255,0.25)]">
+            <span class="relative flex h-3.5 w-3.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold-400 opacity-75" style="background-color: #ffd700;"></span>
+              <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-gold-400" style="background-color: #ffd700;"></span>
+            </span>
+            <div>
+                <h1 class="text-xs sm:text-sm md:text-base font-bold font-orbitron text-cyan-300 tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-star text-gold-400" style="color: #ffd700;"></i>
+                    AULA 2 &bull; ELECCIÓN DE DELEGADOS
+                </h1>
+                <p class="text-[10px] sm:text-xs text-slate-300 font-mono-code flex items-center gap-2">
+                    <span class="text-pink-400 font-bold"><i class="fa-solid fa-gift"></i> PREMIO: 100 PUNTOS</span>
+                    <span class="text-cyan-500">|</span>
+                    <span id="headerParticipantCount"><i class="fa-solid fa-users text-gold-400"></i> 13 PARTICIPANTES</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button id="audioToggleBtn" class="px-4 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/40 hover:border-cyan-400 text-xs font-mono-code text-cyan-300 flex items-center gap-2 transition shadow-[0_0_15px_rgba(0,240,255,0.15)]">
+                <i id="audioIcon" class="fa-solid fa-volume-high text-cyan-400"></i>
+                <span id="audioText">Audio FX</span>
+            </button>
+            <button id="resetListBtn" class="px-4 py-2.5 rounded-xl bg-slate-900/90 hover:bg-rose-950/80 border border-rose-500/40 hover:border-rose-400 text-xs font-mono-code text-rose-300 flex items-center gap-2 transition shadow-[0_0_15px_rgba(255,0,60,0.15)]">
+                <i class="fa-solid fa-rotate-left text-rose-400"></i>
+                <span>Reiniciar</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- BANNER DE DELEGADOS ELEGIDOS (Aparece dinámicamente) -->
+    <div class="relative z-20 w-full max-w-5xl mx-auto px-4 flex flex-col items-center justify-center min-h-[10px]" id="delegatesBanner">
+        <div id="delegatesList" class="flex flex-wrap items-center justify-center gap-4 w-full mt-2">
+            <!-- Se llena dinámicamente con JS al confirmar ganador -->
+        </div>
+    </div>
+
+    <main class="relative z-10 w-full max-w-7xl mx-auto px-4 py-2 flex-1 flex flex-col lg:flex-row items-center justify-center gap-8">
+        
+        <!-- Left / Center Column: Wheel & Suspense Controls -->
+        <div class="w-full lg:w-7/12 flex flex-col items-center justify-center">
+            
+            <!-- Suspense Timer Header Bar -->
+            <div id="suspenseBarContainer" class="w-full max-w-md mb-3 cyber-glass p-3.5 rounded-2xl flex flex-col gap-2.5 transition-all duration-300 opacity-0 transform translate-y-4">
+                <div class="flex justify-between items-center text-xs font-mono-code">
+                    <span class="text-cyan-400 font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-crosshairs text-cyan-400 animate-spin-slow"></i>
+                        <span id="suspenseText">CALCULANDO GANADOR...</span>
+                    </span>
+                    <span id="countdownTimer" class="text-xl font-black font-orbitron text-amber-300 glow-gold">10.00s</span>
+                </div>
+                <div class="w-full bg-slate-950 h-3.5 rounded-full overflow-hidden p-0.5 border border-cyan-500/30">
+                    <div id="suspenseProgress" class="h-full bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 rounded-full w-full transition-all duration-75 shadow-[0_0_15px_#00f0ff]"></div>
+                </div>
+            </div>
+
+            <!-- Wheel Canvas Container (Rotating the DOM element ensures perfect center spin) -->
+            <div class="relative flex items-center justify-center my-2">
+                <div id="wheelGlowRing" class="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-pink-500/30 blur-3xl transition-all duration-500 pointer-events-none"></div>
+
+                <!-- DOM Element rotated by GSAP -->
+                <canvas id="wheelCanvas" width="600" height="600" class="w-[320px] h-[320px] sm:w-[430px] sm:h-[430px] md:w-[500px] md:h-[500px] z-10 drop-shadow-[0_0_35px_rgba(0,240,255,0.3)]"></canvas>
+
+                <!-- Glowing Top Pointer Arrow -->
+                <div id="wheelPointer" class="absolute -top-4 z-20 flex flex-col items-center drop-shadow-[0_0_15px_#ff003c]">
+                    <div class="w-10 h-12 bg-gradient-to-b from-white via-rose-500 to-pink-600 border-t-4 border-white" style="clip-path: polygon(50% 100%, 0 0, 100% 0);"></div>
+                    <i class="fa-solid fa-caret-down text-3xl text-pink-400 -mt-4 drop-shadow-[0_0_10px_#ff003c]"></i>
+                </div>
+
+                <!-- Center Hub -->
+                <div class="absolute z-20 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-900 border-4 border-white shadow-[0_0_30px_rgba(255,255,255,1)] flex flex-col items-center justify-center text-center p-1 pointer-events-none">
+                    <i class="fa-solid fa-crown text-gold-400 text-xl sm:text-2xl animate-pulse" style="color: #ffd700;"></i>
+                    <span class="text-[8px] sm:text-[9px] font-orbitron text-white font-bold leading-tight mt-1">DELEGADO</span>
+                </div>
+            </div>
+
+            <div class="mt-4 w-full max-w-md flex flex-col items-center">
+                <button id="spinBtn" class="group relative w-full py-4 px-8 rounded-2xl bg-gradient-to-r from-green-400 via-cyan-500 to-blue-500 font-orbitron font-black text-lg sm:text-xl text-white uppercase tracking-widest shadow-[0_0_35px_rgba(0,240,255,0.6)] hover:shadow-[0_0_60px_rgba(0,255,170,0.8)] transform active:scale-95 transition-all duration-200 border-2 border-white/40 flex items-center justify-center gap-3 overflow-hidden">
+                    <span class="absolute inset-0 bg-white/30 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out"></span>
+                    <i class="fa-solid fa-play text-2xl text-white group-hover:scale-125 transition-transform duration-500"></i>
+                    <span id="spinBtnText">ELEGIR DELEGADO</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Column: Student Registry Panel -->
+        <div class="w-full lg:w-5/12 cyber-glass p-5 rounded-3xl flex flex-col h-[530px] relative z-20">
+            <div class="flex justify-between items-center pb-3 border-b border-cyan-500/20 mb-3">
+                <div>
+                    <h2 class="font-bold font-orbitron text-cyan-300 text-sm md:text-base flex items-center gap-2">
+                        <i class="fa-solid fa-list-ul text-cyan-400"></i>
+                        <span>ALUMNOS (13)</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 font-mono-code">Haz clic para excluir o incluir</p>
+                </div>
+                <div class="text-right">
+                    <span id="remainingBadge" class="px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 font-mono-code font-bold text-xs shadow-[0_0_10px_rgba(0,240,255,0.3)]">
+                        13 / 13
+                    </span>
+                </div>
+            </div>
+
+            <!-- Student Grid -->
+            <div id="studentGrid" class="grid grid-cols-2 gap-2.5 overflow-y-auto pr-1 flex-1">
+                <!-- Populated via JS -->
+            </div>
+            
+            <div class="pt-3 border-t border-cyan-500/20 mt-3 flex items-center justify-center gap-6 text-xs font-mono-code text-slate-400">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]"></span> Activo</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span> Excluido</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Winner Celebration Modal Overlay -->
+    <div id="winnerModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-500">
+        <div class="cyber-glass max-w-lg w-full p-8 rounded-3xl border-4 border-gold-400/80 shadow-[0_0_120px_rgba(255,215,0,0.8)] text-center transform scale-90 transition-all duration-500 relative overflow-hidden bg-slate-900" id="modalCard" style="border-color: #ffd700;">
+            
+            <div class="absolute -top-16 -left-16 w-36 h-36 bg-gold-500/40 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-16 -right-16 w-36 h-36 bg-pink-500/40 rounded-full blur-3xl pointer-events-none"></div>
+
+            <h2 class="text-3xl font-orbitron text-gold-400 font-black mb-2 glow-gold" style="color: #ffd700;">⭐ NUEVO DELEGADO ⭐</h2>
+            <h3 class="text-xs sm:text-sm uppercase tracking-widest text-white font-orbitron font-semibold mb-4">
+                AULA 2 - TUPROFE20
+            </h3>
+
+            <!-- 100 Points Badge -->
+            <div class="inline-block mb-2 px-6 py-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 border-2 border-white text-white font-bold font-orbitron text-lg animate-bounce shadow-[0_0_20px_rgba(255,0,100,0.6)]">
+                🎁 PREMIO: +100 PUNTOS
+            </div>
+
+            <!-- Name Card -->
+            <div class="my-4 py-8 px-4 bg-slate-950/90 rounded-2xl border-2 border-cyan-400/80 relative shadow-[inset_0_0_40px_rgba(0,240,255,0.3)]" id="winnerNameContainer">
+                <div id="modalStudentName" class="text-4xl sm:text-5xl font-black font-orbitron text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-white to-pink-400 glow-cyan leading-tight py-2 transform transition-transform duration-300">
+                    NOMBRE
+                </div>
+            </div>
+
+            <div class="text-2xl font-orbitron text-pink-400 font-bold mb-8 glow-pink">
+                ¡FELICITACIONES!
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button id="modalConfirmBtn" class="w-full py-4 px-4 rounded-xl bg-gradient-to-r from-green-400 via-cyan-500 to-blue-500 font-orbitron font-black text-white text-lg shadow-[0_0_25px_rgba(0,255,170,0.6)] hover:brightness-110 active:scale-95 transition border-2 border-white/50">
+                    <i class="fa-solid fa-check-double mr-2"></i> CONFIRMAR DELEGADO
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Data Setup (TuProfe20, Aula 2) ---
+        const ORIGINAL_STUDENTS = [
+            "Sayhuri Tapia", "Rodrigo Carcahusto", "Jheremi Pérez", "Camila Espinoza",
+            "Mathias Jimenez", "Gabriel Villa", "Mía Ramírez", "Cataleya Rodriguez",
+            "Alexandra Lujan", "Fabio Aguilar", "Gianfranco Farfán", "Lia Soto", 
+            "Angela Ruiz"
+        ];
+
+        let students = ORIGINAL_STUDENTS.map((name, index) => ({
+            id: index + 1,
+            name: name,
+            active: true
+        }));
+
+        // Cyber Palette for 13 Slices - COLORES VIVOS Y ALEGRES
+        const sliceColors = [
+            '#FF1053', '#FF9900', '#FFDF00', '#00E85B', '#00D4FF', '#9D00FF', 
+            '#FF1053', '#FF9900', '#FFDF00', '#00E85B', '#00D4FF', '#9D00FF',
+            '#FF1053'
+        ];
+        // Border Neon Colors
+        const neonColors = ['#ffffff', '#ffffff', '#ffffff', '#ffffff'];
+
+        let isSpinning = false;
+        let lastWinnerId = null;
+        let currentRotation = 0; // The actual CSS rotation of the Canvas element
+        let delegadosElegidos = []; // Almacena los delegados confirmados
+
+        // DOM Elements
+        const wheelCanvas = document.getElementById('wheelCanvas');
+        const wheelCtx = wheelCanvas.getContext('2d');
+        const pointer = document.getElementById('wheelPointer');
+        const spinBtn = document.getElementById('spinBtn');
+        const gridEl = document.getElementById('studentGrid');
+        const badgeEl = document.getElementById('remainingBadge');
+        const modal = document.getElementById('winnerModal');
+        const suspenseBar = document.getElementById('suspenseBarContainer');
+        const countdownEl = document.getElementById('countdownTimer');
+        const suspenseProg = document.getElementById('suspenseProgress');
+        const suspenseText = document.getElementById('suspenseText');
+
+        // Math Particles Data - SIMBOLOS DE PRIMARIA
+        const mathSymbols = ['+', '-', '×', '÷', '=', '100', '⭐', 'A', 'E', 'I', 'O', 'U'];
+
+        // --- 2. Web Audio API (Stereo, Synths) ---
+        let audioCtx = null;
+        let audioEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        document.getElementById('audioToggleBtn').addEventListener('click', () => {
+            audioEnabled = !audioEnabled;
+            const icon = document.getElementById('audioIcon');
+            icon.className = audioEnabled ? 'fa-solid fa-volume-high text-cyan-400' : 'fa-solid fa-volume-xmark text-slate-500';
+            if (audioEnabled) initAudio();
+        });
+
+        function playTick(pan = 0) {
+            if (!audioEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const panner = audioCtx.createStereoPanner();
+
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+
+            panner.pan.value = pan; // Stereo pan based on wheel position
+
+            osc.connect(panner); panner.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        let buildupOsc, buildupGain;
+        function startBuildup() {
+            if (!audioEnabled || !audioCtx) return;
+            buildupOsc = audioCtx.createOscillator();
+            buildupGain = audioCtx.createGain();
+            buildupOsc.type = 'sawtooth';
+            buildupOsc.frequency.setValueAtTime(100, audioCtx.currentTime);
+            buildupOsc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 8);
+            buildupGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            buildupGain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 2);
+            buildupOsc.connect(buildupGain); buildupGain.connect(audioCtx.destination);
+            buildupOsc.start();
+        }
+
+        function stopBuildup() {
+            if (buildupGain) {
+                buildupGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                setTimeout(() => { if (buildupOsc) buildupOsc.stop(); }, 500);
+            }
+        }
+
+        function playBoom() {
+            if (!audioEnabled || !audioCtx) return;
+            // Sub Bass
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 1.5);
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2);
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 2);
+
+            // Tech Hit Noise
+            const bufferSize = audioCtx.sampleRate * 0.5;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
+            const noiseFilter = audioCtx.createBiquadFilter();
+            noiseFilter.type = 'lowpass'; noiseFilter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+            noiseFilter.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.5);
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(audioCtx.destination);
+            noise.start();
+        }
+
+        // --- 3. UI and Wheel Rendering ---
+
+        function getActiveStudents() {
+            return students.filter(s => s.active);
+        }
+
+        function renderGrid() {
+            gridEl.innerHTML = '';
+            students.forEach(student => {
+                const div = document.createElement('div');
+                div.className = `p-2 rounded-xl border text-xs sm:text-sm font-orbitron font-semibold cursor-pointer transition-all duration-200 flex items-center justify-between ${
+                    student.active 
+                    ? 'bg-slate-900/50 border-cyan-500/30 text-cyan-100 hover:bg-cyan-900/30 hover:border-cyan-400' 
+                    : 'bg-slate-950/80 border-slate-700/50 text-slate-600 opacity-60 hover:opacity-100'
+                }`;
+                div.innerHTML = `
+                    <span class="truncate pr-2">${student.name}</span>
+                    ${student.active ? '<i class="fa-solid fa-check text-cyan-400"></i>' : '<i class="fa-solid fa-xmark text-rose-500"></i>'}
+                `;
+                div.onclick = () => {
+                    if (isSpinning) return;
+                    student.active = !student.active;
+                    if (getActiveStudents().length < 2 && !student.active) {
+                        student.active = true; // prevent less than 2
+                        alert("Debe haber al menos 2 participantes.");
+                    }
+                    updateUI();
+                };
+                gridEl.appendChild(div);
+            });
+            const activeCount = getActiveStudents().length;
+            badgeEl.textContent = `${activeCount} / ${students.length}`;
+            document.getElementById('headerParticipantCount').innerHTML = `<i class="fa-solid fa-users text-gold-400"></i> ${activeCount} PARTICIPANTES`;
+        }
+
+        function drawWheel() {
+            const activeStudents = getActiveStudents();
+            const numSlices = activeStudents.length;
+            const cx = wheelCanvas.width / 2;
+            const cy = wheelCanvas.height / 2;
+            const radius = cx - 15; // Padding for glow/border
+
+            wheelCtx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
+
+            const sliceAngle = (2 * Math.PI) / numSlices;
+
+            for (let i = 0; i < numSlices; i++) {
+                const startAngle = i * sliceAngle - Math.PI / 2; // Start at top
+                const endAngle = startAngle + sliceAngle;
+
+                // Slice Fill
+                wheelCtx.beginPath();
+                wheelCtx.moveTo(cx, cy);
+                wheelCtx.arc(cx, cy, radius, startAngle, endAngle);
+                wheelCtx.closePath();
+                wheelCtx.fillStyle = sliceColors[i % sliceColors.length];
+                wheelCtx.fill();
+
+                // Slice Border
+                wheelCtx.lineWidth = 2;
+                wheelCtx.strokeStyle = neonColors[i % neonColors.length];
+                wheelCtx.stroke();
+
+                // Text
+                wheelCtx.save();
+                wheelCtx.translate(cx, cy);
+                wheelCtx.rotate(startAngle + sliceAngle / 2);
+                
+                wheelCtx.textAlign = "right";
+                wheelCtx.textBaseline = "middle";
+                wheelCtx.fillStyle = "#ffffff";
+                wheelCtx.font = "bold 22px 'Rajdhani', 'Outfit', sans-serif";
+                
+                // Outline/Drop Shadow negro para que resalte sobre los colores vivos
+                wheelCtx.shadowColor = "#000000";
+                wheelCtx.shadowBlur = 6;
+                wheelCtx.shadowOffsetX = 1;
+                wheelCtx.shadowOffsetY = 1;
+
+                // Position text near edge
+                wheelCtx.fillText(activeStudents[i].name, radius - 20, 0);
+                wheelCtx.restore();
+            }
+
+            // Draw Outer Thick Neon Rim
+            wheelCtx.beginPath();
+            wheelCtx.arc(cx, cy, radius, 0, 2 * Math.PI);
+            wheelCtx.lineWidth = 8;
+            wheelCtx.strokeStyle = "#00f0ff";
+            wheelCtx.shadowColor = "#00f0ff";
+            wheelCtx.shadowBlur = 15;
+            wheelCtx.stroke();
+            wheelCtx.shadowBlur = 0; // reset
+        }
+
+        function updateUI() {
+            renderGrid();
+            drawWheel();
+            // Reset visual rotation
+            gsap.set(wheelCanvas, { rotation: currentRotation });
+        }
+
+        // --- 4. Spin Logic ---
+        
+        function getSecureRandom() {
+            const array = new Uint32Array(1);
+            window.crypto.getRandomValues(array);
+            return array[0] / (0xFFFFFFFF + 1);
+        }
+
+        async function startSpin() {
+            if (isSpinning) return;
+            initAudio(); // Ensure audio is ready
+            
+            const activeStudents = getActiveStudents();
+            if (activeStudents.length < 2) return;
+
+            isSpinning = true;
+            spinBtn.classList.add('opacity-50', 'pointer-events-none');
+            spinBtn.querySelector('i').classList.remove('group-hover:rotate-180');
+            
+            // 1. Fair pre-selection
+            const rand = getSecureRandom();
+            const winnerIndex = Math.floor(rand * activeStudents.length);
+            const winner = activeStudents[winnerIndex];
+            
+            // 2. Setup UI for Spin
+            gsap.to(suspenseBar, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
+            suspenseText.textContent = "CALCULANDO GANADOR...";
+            countdownEl.textContent = "10.00s";
+            gsap.set(suspenseProg, { width: "100%" });
+            
+            startBuildup();
+
+            // 3. Calculate target rotation
+            const sliceAngleDeg = 360 / activeStudents.length;
+            // Since we draw slice 0 starting at -90deg (top), the top is where the pointer is.
+            // When wheel is at 0 rotation, slice 0 is under pointer.
+            // If we rotate wheel by R, slice 0 moves. We need to rotate it so slice winnerIndex is under pointer.
+            // Formula to put winnerIndex at top: totalRot % 360 = 360 - (winnerIndex * sliceAngleDeg)
+            
+            const offsetToTop = 360 - (winnerIndex * sliceAngleDeg);
+            
+            // Add a random offset within the slice so it doesn't land perfectly on the line
+            const margin = 5;
+            const randomWithinSlice = (getSecureRandom() * (sliceAngleDeg - 2 * margin)) - (sliceAngleDeg / 2 - margin);
+            
+            // Ensure many spins (e.g. 15 to 20)
+            const minSpins = 15;
+            const baseRot = 360 * minSpins;
+            const targetRotation = currentRotation + baseRot + offsetToTop + randomWithinSlice;
+
+            // 4. Animate with GSAP using the DOM element (flawless center spin)
+            let lastTickAngle = currentRotation;
+            let startTime = performance.now();
+            const spinDurationSec = 10;
+            
+            gsap.to(suspenseProg, {
+                width: "0%",
+                duration: spinDurationSec,
+                ease: "linear"
+            });
+
+            gsap.to(wheelCanvas, {
+                rotation: targetRotation,
+                duration: spinDurationSec,
+                ease: "power4.inOut",
+                onUpdate: function() {
+                    const currentRot = gsap.getProperty(wheelCanvas, "rotation");
+                    
+                    // Countdown update
+                    const elapsed = (performance.now() - startTime) / 1000;
+                    const remaining = Math.max(0, spinDurationSec - elapsed);
+                    countdownEl.textContent = remaining.toFixed(2) + "s";
+
+                    // Tension text changes
+                    if (remaining <= 3.5 && remaining > 2) {
+                        suspenseText.textContent = "ALTA TENSIÓN (3s)...";
+                        countdownEl.classList.add('text-rose-400');
+                    } else if (remaining <= 2 && remaining > 1) {
+                        suspenseText.textContent = "ESTABILIZANDO (2s)...";
+                    } else if (remaining <= 1) {
+                        suspenseText.textContent = "DETENIENDO...";
+                    }
+
+                    // Tick Sound and Pointer Bounce Logic
+                    // A slice passes the top when the angle rotated crosses a multiple of sliceAngleDeg
+                    if (Math.floor(currentRot / sliceAngleDeg) > Math.floor(lastTickAngle / sliceAngleDeg)) {
+                        const pan = ((currentRot % 360) / 180) - 1; // Basic stereo pan
+                        playTick(pan);
+                        
+                        // Bounce pointer visually
+                        pointer.style.transform = "rotate(-25deg)";
+                        setTimeout(() => pointer.style.transform = "rotate(0deg)", 50);
+                    }
+                    lastTickAngle = currentRot;
+                },
+                onComplete: () => {
+                    currentRotation = targetRotation % 360;
+                    handleWin(winner);
+                }
+            });
+
+            // Silence before boom
+            setTimeout(() => stopBuildup(), (spinDurationSec * 1000) - 500);
+        }
+
+        function handleWin(winner) {
+            lastWinnerId = winner.id;
+            countdownEl.textContent = "0.00s";
+            suspenseText.textContent = "¡GANADOR ENCONTRADO!";
+            playBoom();
+            
+            // Screen Shake
+            document.body.classList.add('screen-shake');
+            setTimeout(() => document.body.classList.remove('screen-shake'), 400);
+
+            // Hide suspense bar after a moment
+            setTimeout(() => gsap.to(suspenseBar, { opacity: 0, y: 10, duration: 0.5 }), 1500);
+
+            // Pop Confetti Particles
+            triggerVictoryParticles();
+
+            // Setup and Show Modal
+            const nameEl = document.getElementById('modalStudentName');
+            const nameContainer = document.getElementById('winnerNameContainer');
+            
+            nameEl.textContent = winner.name;
+            
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                
+                // Entrance animation
+                gsap.fromTo(nameContainer, 
+                    { scale: 0.8 }, 
+                    { scale: 1.25, duration: 0.3, ease: "power2.out" }
+                );
+                gsap.to(nameContainer, { scale: 1, duration: 0.4, delay: 0.3, ease: "bounce.out" });
+
+            }, 1000);
+        }
+
+        // --- 5. Background & Particle Canvases ---
+        const bgCanvas = document.getElementById('bgCanvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        const celCanvas = document.getElementById('celebrationCanvas');
+        const celCtx = celCanvas.getContext('2d');
+        
+        let width, height;
+        let bgParticles = [];
+        let celParticles = [];
+
+        function resize() {
+            width = window.innerWidth; height = window.innerHeight;
+            bgCanvas.width = width; bgCanvas.height = height;
+            celCanvas.width = width; celCanvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor(isMath = false, isWin = false) {
+                this.isMath = isMath;
+                this.isWin = isWin;
+                this.reset(isWin);
+            }
+            reset(isWin) {
+                this.x = isWin ? width / 2 : Math.random() * width;
+                this.y = isWin ? height / 2 : Math.random() * height;
+                if (isWin) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 20 + 5;
+                    this.vx = Math.cos(angle) * speed;
+                    this.vy = Math.sin(angle) * speed;
+                    this.size = Math.random() * 6 + 2;
+                    this.life = 1.0;
+                    this.decay = Math.random() * 0.02 + 0.01;
+                    this.color = Math.random() > 0.5 ? '#ffd700' : '#00f0ff'; // Gold/Cyan
+                } else {
+                    this.vx = (Math.random() - 0.5) * 0.5;
+                    this.vy = (Math.random() - 0.5) * 0.5;
+                    this.size = Math.random() * 2 + 1;
+                    this.life = Math.random();
+                    this.decay = 0;
+                    this.color = '#00f0ff';
+                    if (this.isMath) {
+                        this.symbol = mathSymbols[Math.floor(Math.random() * mathSymbols.length)];
+                        this.size = Math.random() * 15 + 10;
+                    }
+                }
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if (this.isWin) {
+                    this.vy += 0.3; // Gravity
+                    this.life -= this.decay;
+                } else {
+                    if (this.x < 0) this.x = width; if (this.x > width) this.x = 0;
+                    if (this.y < 0) this.y = height; if (this.y > height) this.y = 0;
+                    this.life += 0.01;
+                }
+            }
+            draw(ctx) {
+                if (this.isWin && this.life <= 0) return;
+                ctx.globalAlpha = this.isWin ? this.life : (Math.sin(this.life) + 1) / 4;
+                
+                if (this.isMath && !this.isWin) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; // Letras blancas semi-transparentes
+                    ctx.font = `bold ${this.size}px Orbitron`;
+                    ctx.fillText(this.symbol, this.x, this.y);
+                } else {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.color;
+                }
+                ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+            }
+        }
+
+        // Init ambient background
+        for (let i = 0; i < 40; i++) bgParticles.push(new Particle(false));
+        for (let i = 0; i < 20; i++) bgParticles.push(new Particle(true)); // Math symbols
+
+        function triggerVictoryParticles() {
+            for (let i = 0; i < 150; i++) celParticles.push(new Particle(false, true));
+        }
+
+        function animateLoops() {
+            bgCtx.clearRect(0, 0, width, height);
+            celCtx.clearRect(0, 0, width, height);
+            
+            bgParticles.forEach(p => { p.update(); p.draw(bgCtx); });
+            
+            for (let i = celParticles.length - 1; i >= 0; i--) {
+                const p = celParticles[i];
+                p.update();
+                p.draw(celCtx);
+                if (p.isWin && p.life <= 0) celParticles.splice(i, 1);
+            }
+            requestAnimationFrame(animateLoops);
+        }
+
+        
+        // Modal Handlers
+        function closeModalAndReset() {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            isSpinning = false;
+            spinBtn.classList.remove('opacity-50', 'pointer-events-none');
+            countdownEl.classList.remove('text-rose-400');
+        }
+
+        function renderDelegates() {
+            const container = document.getElementById('delegatesList');
+            container.innerHTML = '';
+            
+            if (delegadosElegidos.length > 0) {
+                let titleHtml = `<div class="w-full text-center mb-2"><h2 class="text-gold-400 font-orbitron font-black text-sm md:text-base tracking-widest glow-gold" style="color: #ffd700;">⭐ DELEGADOS CONFIRMADOS ⭐</h2></div>`;
+                container.innerHTML += titleHtml;
+            }
+
+            delegadosElegidos.forEach((del) => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-3 bg-gradient-to-r from-pink-500 to-rose-600 border-2 border-white px-5 py-2.5 rounded-full shadow-[0_0_25px_rgba(255,0,100,0.8)] transform hover:scale-105 transition-transform cursor-default animate-bounce z-50";
+                
+                // Detener el salto constante despues de 2 segundos para que no distraiga
+                setTimeout(() => div.classList.remove('animate-bounce'), 2000);
+                
+                div.innerHTML = `
+                    <i class="fa-solid fa-crown text-gold-400 text-xl md:text-2xl" style="color: #ffd700;"></i>
+                    <span class="font-orbitron font-black text-white text-xl md:text-2xl tracking-wider drop-shadow-md">${del.name}</span>
+                    <span class="bg-white text-rose-600 px-2 py-1 rounded-md text-xs md:text-sm font-bold shadow-inner">+100 PTS</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        document.getElementById('modalConfirmBtn').addEventListener('click', () => {
+            if (lastWinnerId) {
+                const s = students.find(x => x.id === lastWinnerId);
+                if (s) {
+                    // 1. Agregar a la lista superior llamativa (si no está ya registrado)
+                    if (!delegadosElegidos.find(d => d.id === s.id)) {
+                        delegadosElegidos.push(s);
+                        renderDelegates();
+                    }
+                    // 2. Excluirlo automáticamente de la ruleta para el siguiente giro
+                    s.active = false;
+                }
+            }
+            updateUI();
+            closeModalAndReset();
+        });
+
+        document.getElementById('resetListBtn').addEventListener('click', () => {
+            if (isSpinning) return;
+            students.forEach(s => s.active = true);
+            delegadosElegidos = []; // Limpiar los ganadores anteriores
+            renderDelegates(); // Actualizar la vista (vaciar banner)
+            updateUI();
+        });
+
+        spinBtn.addEventListener('click', startSpin);
+
+        // Boot up
+        window.onload = function() {
+            updateUI();
+            animateLoops();
+        };
+
+    </script>
+</body>
+</html>
